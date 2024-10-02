@@ -1,7 +1,6 @@
 // Import required modules
 const express = require("express");
 const cors = require("cors");
-const axios = require("axios");
 
 // Initialize express application
 const app = express();
@@ -20,28 +19,28 @@ const DATA_SOURCE_URL =
 app.get("/api/trade-data", async (req, res) => {
   try {
     // Fetch data from the external API
-    const response = await axios.get(DATA_SOURCE_URL, {
+    const response = await fetch(DATA_SOURCE_URL, {
       timeout: 5000, // Set a 5-second timeout
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
     // Send the fetched data as JSON response
-    res.json(response.data);
+    res.json(data);
   } catch (error) {
     // Log the error for debugging
     console.error("Error fetching data:", error.message);
 
     // Send an appropriate error response
-    if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
-      res
-        .status(error.response.status)
-        .json({ error: "External API error", details: error.response.data });
-    } else if (error.request) {
-      // The request was made but no response was received
-      res.status(504).json({ error: "No response from external API" });
+    if (error.name === "AbortError") {
+      res.status(504).json({ error: "Request timeout" });
+    } else if (error.message.includes("HTTP error!")) {
+      res.status(502).json({ error: "External API error" });
     } else {
-      // Something happened in setting up the request that triggered an Error
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -65,5 +64,4 @@ process.on("uncaughtException", (error) => {
 // Error handling for unhandled promise rejections
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection at:", promise, "reason:", reason);
-  // Perform any necessary cleanup here
 });
