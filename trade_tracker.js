@@ -3,7 +3,7 @@ let currentPage = 1;
 const itemsPerPage = 20;
 
 function fetchAndDisplayTradeData() {
-  fetch("http://localhost:3000/api/trade-data")
+  fetch("/api/trade-data")
     .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
